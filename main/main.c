@@ -74,21 +74,21 @@ void send_ascii_multi(const char *cmd)
     /* TL */
     esp_now_send(BC_MAC, (uint8_t *)cmd, strlen(cmd));
     ESP_LOGI("TX", "%s", cmd);
-    vTaskDelay(pdMS_TO_TICKS(15));
+    vTaskDelay(pdMS_TO_TICKS(30));
 
     /* TR */
     strcpy(buf, cmd);
     buf[strlen(buf) - 1] = 'R';
     esp_now_send(BC_MAC, (uint8_t *)buf, strlen(buf));
     ESP_LOGI("TX", "%s", buf);
-    vTaskDelay(pdMS_TO_TICKS(15));
+    vTaskDelay(pdMS_TO_TICKS(30));
 
     /* TM */
     strcpy(buf, cmd);
     buf[strlen(buf) - 1] = 'M';
     esp_now_send(BC_MAC, (uint8_t *)buf, strlen(buf));
     ESP_LOGI("TX", "%s", buf);
-    vTaskDelay(pdMS_TO_TICKS(15));
+    vTaskDelay(pdMS_TO_TICKS(30));
 
     last_activity_ms = xTaskGetTickCount() * portTICK_PERIOD_MS;
 }
@@ -113,16 +113,18 @@ void send_startup_packets(void)
     ESP_LOGW("STARTUP", "Sending default startup packets");
 
     const char *packets[] = {
-        "@I01#TL", "@D_0#TL", "@L_1#TL", "@F_0#TL", "@E_0#TL", "@C05#TL",
-        "@I01#TR", "@D_0#TR", "@L_1#TR", "@F_0#TR", "@E_0#TR", "@C05#TR",
-        "@I01#TM", "@D_0#TM", "@L_1#TM", "@F_0#TM", "@E_0#TM", "@C05#TM"};
+        "@I01#TL", "@D_0#TL", "@L_1#TL", "@C05#TL", "@F_0#TL", "@E_0#TL",
+        "@I01#TR", "@D_0#TR", "@L_1#TR", "@C05#TR", "@F_0#TR", "@E_0#TR",
+        "@I01#TM", "@D_0#TM", "@L_1#TM", "@C05#TM", "@F_0#TM", "@E_0#TM"};
 
     for (int i = 0; i < 18; i++)
     {
         esp_now_send(BC_MAC, (uint8_t *)packets[i], strlen(packets[i]));
         ESP_LOGI("STARTUP-TX", "%s", packets[i]);
-        vTaskDelay(pdMS_TO_TICKS(40));
+        vTaskDelay(pdMS_TO_TICKS(50));
     }
+    d_idx = 0; 
+    active_mode = MODE_INTENSITY;
 }
 
 /* ------------------------------------------------------- */
