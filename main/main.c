@@ -113,15 +113,13 @@ void send_startup_packets(void)
     ESP_LOGW("STARTUP", "Sending default startup packets");
 
     const char *packets[] = {
-        "@F_0#TL", "@I01#TL", "@D_0#TL", "@L_1#TL", "@C05#TL",  "@E_0#TL",
-        "@F_0#TR", "@I01#TR", "@D_0#TR", "@L_1#TR", "@C05#TR",  "@E_0#TR",
-        "@F_0#TM", "@I01#TM", "@D_0#TM", "@L_1#TM", "@C05#TM",  "@E_0#TM"};
+        "@RST#TL", "@RST#TM", "@RST#TR"};
 
-    for (int i = 0; i < 18; i++)
+    for (int i = 0; i < 3; i++)
     {
         esp_now_send(BC_MAC, (uint8_t *)packets[i], strlen(packets[i]));
         ESP_LOGI("STARTUP-TX", "%s", packets[i]);
-        vTaskDelay(pdMS_TO_TICKS(2000));
+        vTaskDelay(pdMS_TO_TICKS(500));
     }
     d_idx = 0; 
     active_mode = MODE_INTENSITY;
