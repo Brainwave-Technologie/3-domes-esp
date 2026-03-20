@@ -16,8 +16,8 @@ static const char *TAG = "REMOTE";
 #define BTN2_GPIO 14
 #define BTN3_GPIO 27
 #define LED_R_GPIO 26
-#define LED_G_GPIO 16
-#define LED_B_GPIO 17
+#define LED_G_GPIO 19
+#define LED_B_GPIO 18
 const uint8_t BC_MAC[6] = {0xff, 0xff, 0xff, 0xff, 0xff, 0xff};
 typedef enum
 {
@@ -116,19 +116,6 @@ void handle_btn1(void)
             vTaskDelay(pdMS_TO_TICKS(100));
             send_ascii_multi("@RSF#TR");
             vTaskDelay(pdMS_TO_TICKS(300));
-            // if (d_idx == 1) 
-            // {
-            //     ESP_LOGW("SHUTDOWN", "Depth was ON -> Resetting system state");
-            //     d_idx = 0;
-            //     send_ascii_multi(D_CMD[d_idx]); 
-            //     vTaskDelay(pdMS_TO_TICKS(100));
-            //     c_idx = 1;
-            //     send_ascii_multi(C_CMD[c_idx]); 
-            //     vTaskDelay(pdMS_TO_TICKS(100));
-            //     i_idx = 5;
-            //     send_ascii_multi(I_CMD[i_idx]); 
-            //     vTaskDelay(pdMS_TO_TICKS(100));
-            // }
             device_on = 0;
         }
         else if (device_on && dur < 600)
@@ -225,20 +212,6 @@ void app_main(void)
             send_ascii_multi("@RSF#TM");
             vTaskDelay(pdMS_TO_TICKS(100));
             send_ascii_multi("@RSF#TR");
-            vTaskDelay(pdMS_TO_TICKS(300));
-            // if (d_idx == 1) 
-            // {
-            //     ESP_LOGW("SHUTDOWN", "Depth was ON -> Resetting system state");
-            //     d_idx = 0;
-            //     send_ascii_multi(D_CMD[d_idx]); 
-            //     vTaskDelay(pdMS_TO_TICKS(100));
-            //     c_idx = 1;
-            //     send_ascii_multi(C_CMD[c_idx]); 
-            //     vTaskDelay(pdMS_TO_TICKS(100));
-            //     i_idx = 5;
-            //     send_ascii_multi(I_CMD[i_idx]); 
-            //     vTaskDelay(pdMS_TO_TICKS(100));
-            // }
             device_on = 0;
         }
         vTaskDelay(pdMS_TO_TICKS(50));

@@ -16,5 +16,6 @@
     "--query-driver=**",
     "--compile-commands-dir=c:\\Users\\embedded\\transmitter\\build"
   ],
-  "idf.flashType": "UART"
+  "idf.flashType": "UART",
+  "idf.currentSetup": "C:\\Users\\embedded\\esp\\v5.5.1\\esp-idf"
 }
