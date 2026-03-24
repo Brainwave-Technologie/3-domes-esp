@@ -1,4 +1,4 @@
-#include <stdio.h>
+#include <stdio.h> 
 #include <string.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -18,31 +18,39 @@ static const char *TAG = "REMOTE";
 #define LED_R_GPIO 26
 #define LED_G_GPIO 19
 #define LED_B_GPIO 18
+
 const uint8_t BC_MAC[6] = {0xff, 0xff, 0xff, 0xff, 0xff, 0xff};
+
 typedef enum
 {
     MODE_INTENSITY,
     MODE_COLOR,
     MODE_DEPTH
 } mode_t;
+
 mode_t active_mode = MODE_INTENSITY;
 uint8_t device_on = 0;
 int i_idx = 1, c_idx = 1, d_idx = 0;
+
 const char *I_CMD[] = {"@I01#TL", "@I02#TL", "@I04#TL", "@I06#TL", "@I08#TL", "@I0:#TL"};
 const char *C_CMD[] = {"@C-5#TL", "@C05#TL", "@C+5#TL"};
 const char *D_CMD[] = {"@D_0#TL", "@D_1#TL"};
+
 uint32_t last_activity_ms = 0;
 uint32_t btn1_press_ms = 0;
 uint8_t btn1_prev = 0;
+
 void send_cb(const wifi_tx_info_t *tx_info, esp_now_send_status_t status)
 {
     ESP_LOGI("ESP-NOW", "Send status: %s",
              status == ESP_NOW_SEND_SUCCESS ? "SUCCESS" : "FAIL");
 }
+
 uint8_t btn(uint8_t pin)
 {
     return gpio_get_level(pin) == 0;
 }
+
 void send_ascii_multi(const char *cmd)
 {
     if (!device_on)
@@ -64,15 +72,40 @@ void send_ascii_multi(const char *cmd)
 
     last_activity_ms = xTaskGetTickCount() * portTICK_PERIOD_MS;
 }
+
 void send_full_state(void)
 {
     ESP_LOGW("STATE", "I=%d C=%d D=%d", i_idx, c_idx, d_idx);
-    send_ascii_multi(I_CMD[i_idx]);
-    vTaskDelay(pdMS_TO_TICKS(30));
-    send_ascii_multi(C_CMD[c_idx]);
-    vTaskDelay(pdMS_TO_TICKS(30));
-    send_ascii_multi(D_CMD[d_idx]);
+
+    if (active_mode == MODE_INTENSITY)
+    {
+        /* Depth → Color → Intensity (active last) */
+        send_ascii_multi(D_CMD[d_idx]);
+        vTaskDelay(pdMS_TO_TICKS(30));
+        send_ascii_multi(C_CMD[c_idx]);
+        vTaskDelay(pdMS_TO_TICKS(30));
+        send_ascii_multi(I_CMD[i_idx]);
+    }
+    else if (active_mode == MODE_COLOR)
+    {
+        /* Depth → Intensity → Color (active last) */
+        send_ascii_multi(D_CMD[d_idx]);
+        vTaskDelay(pdMS_TO_TICKS(30));
+        send_ascii_multi(I_CMD[i_idx]);
+        vTaskDelay(pdMS_TO_TICKS(30));
+        send_ascii_multi(C_CMD[c_idx]);
+    }
+    else if (active_mode == MODE_DEPTH)
+    {
+        /* Intensity → Color → Depth (active last) */
+        send_ascii_multi(I_CMD[i_idx]);
+        vTaskDelay(pdMS_TO_TICKS(30));
+        send_ascii_multi(C_CMD[c_idx]);
+        vTaskDelay(pdMS_TO_TICKS(30));
+        send_ascii_multi(D_CMD[d_idx]);
+    }
 }
+
 void send_startup_packets(void)
 {
     ESP_LOGW("STARTUP", "Sending default startup packets");
@@ -87,6 +120,7 @@ void send_startup_packets(void)
     d_idx = 0;
     active_mode = MODE_INTENSITY;
 }
+
 void handle_btn1(void)
 {
     uint8_t now = btn(BTN1_GPIO);
@@ -128,6 +162,7 @@ void handle_btn1(void)
     }
     btn1_prev = now;
 }
+
 void handle_btn2(void)
 {
     if (!device_on || !btn(BTN2_GPIO))
@@ -142,6 +177,7 @@ void handle_btn2(void)
     send_full_state();
     vTaskDelay(pdMS_TO_TICKS(250));
 }
+
 void handle_btn3(void)
 {
     if (!device_on || !btn(BTN3_GPIO))
@@ -156,19 +192,20 @@ void handle_btn3(void)
     send_full_state();
     vTaskDelay(pdMS_TO_TICKS(250));
 }
-#define LED_ON 0
+
+#define LED_ON  0
 #define LED_OFF 1
+
 void update_led(void)
 {
     gpio_set_level(LED_R_GPIO,
                    (device_on && active_mode == MODE_INTENSITY) ? LED_ON : LED_OFF);
-
     gpio_set_level(LED_G_GPIO,
                    (device_on && active_mode == MODE_COLOR) ? LED_ON : LED_OFF);
-
     gpio_set_level(LED_B_GPIO,
                    (device_on && active_mode == MODE_DEPTH) ? LED_ON : LED_OFF);
 }
+
 void app_main(void)
 {
     ESP_ERROR_CHECK(nvs_flash_init());
@@ -181,28 +218,34 @@ void app_main(void)
     ESP_ERROR_CHECK(esp_wifi_set_channel(1, WIFI_SECOND_CHAN_NONE));
     ESP_ERROR_CHECK(esp_now_init());
     esp_now_register_send_cb(send_cb);
+
     esp_now_peer_info_t peer = {0};
     memcpy(peer.peer_addr, BC_MAC, 6);
     peer.channel = 1;
     peer.ifidx = ESP_IF_WIFI_STA;
     peer.encrypt = false;
     ESP_ERROR_CHECK(esp_now_add_peer(&peer));
+
     gpio_config_t in = {
         .mode = GPIO_MODE_INPUT,
         .pin_bit_mask = (1ULL << BTN1_GPIO) | (1ULL << BTN2_GPIO) | (1ULL << BTN3_GPIO),
         .pull_up_en = GPIO_PULLUP_ENABLE};
     gpio_config(&in);
+
     gpio_config_t out = {
         .mode = GPIO_MODE_OUTPUT,
         .pin_bit_mask = (1ULL << LED_R_GPIO) | (1ULL << LED_G_GPIO) | (1ULL << LED_B_GPIO)};
     gpio_config(&out);
+
     ESP_LOGW(TAG, "REMOTE READY");
+
     while (1)
     {
         handle_btn1();
         handle_btn2();
         handle_btn3();
         update_led();
+
         uint32_t now_ms = xTaskGetTickCount() * portTICK_PERIOD_MS;
         if (device_on && (now_ms - last_activity_ms > 60000))
         {
