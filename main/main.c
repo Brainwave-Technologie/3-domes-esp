@@ -73,6 +73,19 @@ void send_ascii_multi(const char *cmd)
     last_activity_ms = xTaskGetTickCount() * portTICK_PERIOD_MS;
 }
 
+/* Sends only the active mode's current command — used to move cursor on receiver */
+void send_mode_cursor(void)
+{
+    if (!device_on)
+        return;
+    if (active_mode == MODE_INTENSITY)
+        send_ascii_multi(I_CMD[i_idx]);
+    else if (active_mode == MODE_COLOR)
+        send_ascii_multi(C_CMD[c_idx]);
+    else if (active_mode == MODE_DEPTH)
+        send_ascii_multi(D_CMD[d_idx]);
+}
+
 void send_full_state(void)
 {
     ESP_LOGW("STATE", "I=%d C=%d D=%d", i_idx, c_idx, d_idx);
@@ -80,28 +93,28 @@ void send_full_state(void)
     if (active_mode == MODE_INTENSITY)
     {
         /* Depth → Color → Intensity (active last) */
-        send_ascii_multi(D_CMD[d_idx]);
-        vTaskDelay(pdMS_TO_TICKS(30));
-        send_ascii_multi(C_CMD[c_idx]);
-        vTaskDelay(pdMS_TO_TICKS(30));
+        // send_ascii_multi(D_CMD[d_idx]);
+        // vTaskDelay(pdMS_TO_TICKS(30));
+        // send_ascii_multi(C_CMD[c_idx]);
+        // vTaskDelay(pdMS_TO_TICKS(30));
         send_ascii_multi(I_CMD[i_idx]);
     }
     else if (active_mode == MODE_COLOR)
     {
         /* Depth → Intensity → Color (active last) */
-        send_ascii_multi(D_CMD[d_idx]);
-        vTaskDelay(pdMS_TO_TICKS(30));
-        send_ascii_multi(I_CMD[i_idx]);
-        vTaskDelay(pdMS_TO_TICKS(30));
+        // send_ascii_multi(D_CMD[d_idx]);
+        // vTaskDelay(pdMS_TO_TICKS(30));
+        // send_ascii_multi(I_CMD[i_idx]);
+        // vTaskDelay(pdMS_TO_TICKS(30));
         send_ascii_multi(C_CMD[c_idx]);
     }
     else if (active_mode == MODE_DEPTH)
     {
         /* Intensity → Color → Depth (active last) */
-        send_ascii_multi(I_CMD[i_idx]);
-        vTaskDelay(pdMS_TO_TICKS(30));
-        send_ascii_multi(C_CMD[c_idx]);
-        vTaskDelay(pdMS_TO_TICKS(30));
+        // send_ascii_multi(I_CMD[i_idx]);
+        // vTaskDelay(pdMS_TO_TICKS(30));
+        // send_ascii_multi(C_CMD[c_idx]);
+        // vTaskDelay(pdMS_TO_TICKS(30));
         send_ascii_multi(D_CMD[d_idx]);
     }
 }
@@ -158,6 +171,7 @@ void handle_btn1(void)
             if (active_mode > MODE_DEPTH)
                 active_mode = MODE_INTENSITY;
             ESP_LOGI("MODE", "%d", active_mode);
+            send_mode_cursor();   /* update cursor on receiver to new mode's value */
         }
     }
     btn1_prev = now;
